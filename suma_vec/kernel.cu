@@ -95,12 +95,12 @@ int main()
 	//PASO 4: Ejecución de le kernel
 
 	const int threads_per_block_ = 256;
-	const int blocks_per_grid_ = kNumElements / threads_per_block_;
+	const int blocks_per_grid_ = 650000;
 
 	dim3 block(threads_per_block_, 1, 1);
 	dim3 grid(blocks_per_grid_, 1, 1);
 
-	kernel_suma_vectores_grande<<<grid, block >>>(d_A_, d_B_, d_C_, kNumElements);
+	suma_vectores_grande<<<grid, block >>>(d_A_, d_B_, d_C_, kNumElements);
 	cudaError_t err_ = cudaGetLastError();
 	if (err_ != cudaSuccess)
 	{
