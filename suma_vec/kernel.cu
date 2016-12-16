@@ -8,7 +8,7 @@ __global__ void addKernel(int *c, const int *a, const int *b)
 
 }
 
-void suma_vectores
+void suma_vectores_no_CUDA
 (
 	float *pA,
 	float *pB,
@@ -32,15 +32,33 @@ void kernel_suma_vectores
 )
 {
 	int idx = blockDim.x * blockIdx.x + threadIdx.x;
-	pC[idx] = cpA[idx] + cpB[idx];
+	//compruebo que tengo hilos suficientes para todos los elementos y por tanto no me salgo
+	if(idx < cNumElements)
+		pC[idx] = cpA[idx] + cpB[idx];
 }
+
+__global__
+void suma_vectores_grande(
+	const float *cpA,
+	const float *cpB,
+	float *pC,
+	const int cNumElements)
+{
+	int i;
+	int idx = threadIdx.x + blockIdx.x * blockDim.x;
+
+	for (i = threadIdx.x + blockIdx.x * blockDim.x; i < cNumElements; i += gridDim.x * blockDim.x) {
+		pC[i] = cpA[i] + cpB[i];
+	}
+}
+
 int main()
 {
     //paso 1 -> Inicialización
 	cudaSetDevice(0); //Esta función le dice al framework: voy a usar la tarjeta x
 
 	//paso 2 -> Declaración y reserva
-	const int kNumElements = 25600; //numero al azar
+	const int kNumElements = 25600; //numero al azar NO TAN AL AZAR D:<
 	size_t kNumBytes = kNumElements * sizeof(float); //bytes totales para reservar y pasarselo al malloc
 	//declaro los vectores en la CPU (HOST)
 	float *h_A_ = (float *)malloc(kNumBytes);
@@ -82,7 +100,7 @@ int main()
 	dim3 block(threads_per_block_, 1, 1);
 	dim3 grid(blocks_per_grid_, 1, 1);
 
-	kernel_suma_vectores<<<grid, block >>>(d_A_, d_B_, d_C_, kNumElements);
+	kernel_suma_vectores_grande<<<grid, block >>>(d_A_, d_B_, d_C_, kNumElements);
 	cudaError_t err_ = cudaGetLastError();
 	if (err_ != cudaSuccess)
 	{
